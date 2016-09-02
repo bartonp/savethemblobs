@@ -16,7 +16,7 @@ def parse_args():
 	args.no_submit_cydia = True
 	args.skip_cydia = True
 	args.skip_ifaith = True
-	args.overwrite = True
+	args.overwrite = False
 	return args
 
 class Device(object):
