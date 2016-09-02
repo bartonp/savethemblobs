@@ -12,7 +12,12 @@ def parse_args():
 	parser.add_argument('--save-dir', help='local dir for saving blobs (default: ~/.shsh)', default=os.path.join(os.path.expanduser('~'), '.shsh'))
 	parser.add_argument('--overwrite-apple', help='overwrite any existing blobs (only from Apple)', action='store_true')
 	parser.add_argument('--tu-path', help='Point to the Tinyumbrella config path (default ~/.tu)', default=os.path.join('~', '.tu'))
-	return parser.parse_args()
+	args = parser.parse_args()
+	args.no_submit_cydia = True
+	args.skip_cydia = True
+	args.skip_ifaith = True
+	args.overwrite = True
+	return args
 
 class Device(object):
 	__data = {}
@@ -55,10 +60,6 @@ def main():
 		args = parse_args()
 		args.device = identifier
 		args.ecid = str(ecid)
-		args.no_submit_cydia = True
-		args.skip_cydia = True
-		args.skip_ifaith = True
-		args.overwrite = False
 
 		savethemblobs.main(args)
 		print ""

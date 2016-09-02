@@ -12,7 +12,7 @@ def get_connected_devices():
 	return list_devices().values()
 
 def get_user_friendly_name(identifier):
-	url = 'http://api.ios.icj.me/v2/%s/latest/name' % (identifier)
+	url = 'https://api.ipsw.me/v2.1/{}/latest/name'.format(identifier)
 	r = requests.get(url, headers={'User-Agent': savethemblobs.USER_AGENT})
 	return r.text	
 
