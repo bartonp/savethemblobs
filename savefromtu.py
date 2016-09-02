@@ -58,9 +58,11 @@ def main():
 		args.no_submit_cydia = True
 		args.skip_cydia = True
 		args.skip_ifaith = True
+		args.overwrite = False
 
 		savethemblobs.main(args)
 		print ""
+
 
 if __name__ == '__main__':
 	main()

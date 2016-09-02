@@ -14,6 +14,7 @@
 import sys, os, argparse
 import requests
 import json
+import gzip
 
 __version__ = '1.0'
 
@@ -73,7 +74,8 @@ def submit_blobs_to_cydia(cpid, bdid, ecid, data):
 	return r.status_code == requests.codes.ok
 
 def write_to_file(file_path, data):
-	f = open(file_path, 'w')
+	# Written now to GZip files to help decrease the size
+	f = gzip.open(file_path, 'wb', compresslevel=9)
 	f.write(data)
 	f.close()
 
