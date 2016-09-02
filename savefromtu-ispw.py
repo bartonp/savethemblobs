@@ -6,6 +6,13 @@ import argparse
 import savethemispw
 import gzip
 import plistlib
+import requests
+
+
+def get_user_friendly_name(identifier):
+	url = 'https://api.ipsw.me/v2.1/{}/latest/name'.format(identifier)
+	r = requests.get(url, headers={'User-Agent': savethemblobs.USER_AGENT})
+	return r.text
 
 def parse_args():
 	parser = argparse.ArgumentParser()
@@ -50,11 +57,16 @@ def main():
 
 		identifier = device.get_value(name=u'ProductType')
 		ecid = device.get_value(name=u'UniqueChipID')
+		friendly_name = get_user_friendly_name(identifier)
 
 		print "Device: {} [{}]".format(ecid, identifier)
 
 		args = parse_args()
 		args.device = identifier
+		args.save_dir = os.path.join(args.save_dir, friendly_name)
+
+		if not os.path.isdir(args.save_dir):
+			os.makedirs(args.save_dir)
 
 		savethemispw.main(args)
 		print ""
