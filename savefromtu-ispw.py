@@ -11,7 +11,7 @@ import requests
 
 def get_user_friendly_name(identifier):
 	url = 'https://api.ipsw.me/v2.1/{}/latest/name'.format(identifier)
-	r = requests.get(url, headers={'User-Agent': savethemblobs.USER_AGENT})
+	r = requests.get(url, headers={'User-Agent': "SaveTheIPSW/1.0"})
 	return r.text
 
 def parse_args():
