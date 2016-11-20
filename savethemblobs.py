@@ -15,22 +15,20 @@ import sys, os, argparse
 import requests
 import json
 import gzip
+from ineal import INeal
 
 __version__ = '1.0'
 
 USER_AGENT = 'savethemblobs/%s' % __version__
+ineal = INeal.Instance()
 
 def firmwares_being_signed(device):
-	url = 'http://api.ineal.me/tss/%s/includebeta' % (device)
-	r = requests.get(url, headers={'User-Agent': USER_AGENT})
-	return r.text
+	return ineal.get_firmware_for_device(device)
 
-def tss_request_manifest(board, build, ecid, cpid=None, bdid=None):
-	url = 'http://api.ineal.me/tss/manifest/%s/%s' % (board, build)
-	r = requests.get(url, headers={'User-Agent': USER_AGENT})
-	if not r.status_code == requests.codes.ok:
-		return tss_request_manifest_from_cydia(build, cpid, bdid, ecid)
-	return r.text.replace('<string>$ECID$</string>', '<integer>%s</integer>' % (ecid))
+
+def tss_request_manifest(board, build, ecid, *args, **kwargs):
+	data = ineal.request_manifest(board, build)
+	return data.replace('<string>$ECID$</string>', '<integer>%s</integer>' % (ecid))
 
 def tss_request_manifest_from_cydia(build, cpid, bdid, ecid):
 	url = 'http://cydia.saurik.com/tss@home/api/manifest.xml/%s/%s/%s' % (build, cpid, bdid)
@@ -113,35 +111,36 @@ def main(passedArgs = None):
 		os.makedirs(args.save_dir)
 
 	print 'Fetching firmwares Apple is currently signing for %s' % (args.device)
-	d = firmwares_being_signed(args.device)
-	if not d:
+	device = firmwares_being_signed(args.device)
+
+	if not device:
 		print 'ERROR: No firmwares found! Invalid device.'
 		return 1
-	for device in json.loads(d).itervalues():
-		board = device['board']
-		model = device['model']
-		cpid = device['cpid']
-		bdid = device['bdid']
-		for f in device['firmwares']:
-			save_path = os.path.join(args.save_dir, '%s_%s_%s-%s.shsh' % (ecid, model, f['version'], f['build']))
 
-			if not os.path.exists(save_path) or args.overwrite_apple or args.overwrite:
-				print 'Requesting blobs from Apple for %s/%s' % (model, f['build'])
-				r = request_blobs_from_apple(board, f['build'], ecid, cpid, bdid)
+	board = device['board']
+	model = device['model']
+	cpid = device['cpid']
+	bdid = device['bdid']
+	for f in device['firmwares']:
+		save_path = os.path.join(args.save_dir, '%s_%s_%s-%s.shsh' % (ecid, model, f['version'], f['build']))
 
-				if r['MESSAGE'] == 'SUCCESS':
-					print 'Saving blobs to %s' % (save_path)
-					write_to_file(save_path, r['REQUEST_STRING'])
+		if not os.path.exists(save_path) or args.overwrite_apple or args.overwrite:
+			print 'Requesting blobs from Apple for %s/%s' % (model, f['build'])
+			r = request_blobs_from_apple(device['board'], f['build'], ecid, cpid, bdid)
 
-					if not args.no_submit_cydia:
-						print 'Submitting blobs to Cydia server'
-						submit_blobs_to_cydia(cpid, bdid, ecid, r['REQUEST_STRING'])
+			if r['MESSAGE'] == 'SUCCESS':
+				print 'Saving blobs to %s' % (save_path)
+				write_to_file(save_path, r['REQUEST_STRING'])
 
-				else:
-					print 'Error receiving blobs: %s [%s]' % (r['MESSAGE'], r['STATUS'])
+				if not args.no_submit_cydia:
+					print 'Submitting blobs to Cydia server'
+					submit_blobs_to_cydia(cpid, bdid, ecid, r['REQUEST_STRING'])
 
 			else:
-				print 'Skipping build %s; blobs already exist at %s' % (f['build'], save_path)
+				print 'Error receiving blobs: %s [%s]' % (r['MESSAGE'], r['STATUS'])
+
+		else:
+			print 'Skipping build %s; blobs already exist at %s' % (f['build'], save_path)
 
 	if not args.skip_cydia:
 		print 'Fetching blobs available on Cydia server'
